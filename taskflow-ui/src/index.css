@@ -1,0 +1,121 @@
+/* ============================================================
+   TaskFlow — Global Styles (augments Bootstrap)
+   ============================================================ */
+
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background-color: #f5f6fa;
+}
+
+/* ── Auth Page ── */
+.auth-bg {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  min-height: 100vh;
+}
+
+.auth-card {
+  width: 440px;
+  max-width: 95vw;
+  border-radius: 20px;
+}
+
+/* ── Layout ── */
+.wrapper {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* ── Sidebar ── */
+.sidebar {
+  width: 250px;
+  min-height: 100vh;
+  background: linear-gradient(180deg, #1e2a45 0%, #0f3460 100%);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  left: 0; top: 0; bottom: 0;
+  z-index: 200;
+  box-shadow: 4px 0 15px rgba(0,0,0,0.15);
+}
+.sidebar-header { padding: 22px 20px 18px; color: #fff; border-bottom: 1px solid rgba(255,255,255,0.1); }
+.sidebar-nav { list-style: none; padding: 12px 0; margin: 0; flex: 1; }
+.sidebar-nav li a {
+  display: flex; align-items: center; padding: 11px 20px;
+  color: rgba(255,255,255,0.7); text-decoration: none; font-size: 0.9rem;
+  border-left: 3px solid transparent; transition: all 0.2s ease;
+}
+.sidebar-nav li a:hover, .sidebar-nav li.active a {
+  color: #fff; background: rgba(255,255,255,0.1); border-left-color: #4da8ff;
+}
+.sidebar-footer { padding: 18px 20px; border-top: 1px solid rgba(255,255,255,0.1); }
+
+.avatar {
+  width: 36px; height: 36px; min-width: 36px; border-radius: 50%;
+  background: linear-gradient(135deg, #4da8ff, #0066cc);
+  color: #fff; display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 0.85rem;
+}
+
+.main-content {
+  margin-left: 250px; flex: 1; padding: 28px 32px;
+  background: #f5f6fa; min-height: 100vh;
+}
+
+/* ── Cards ── */
+.stat-card, .project-card, .quick-link-card {
+  border: none; border-radius: 14px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.stat-card:hover, .project-card:hover, .quick-link-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.1) !important;
+}
+.stat-icon {
+  width: 54px; height: 54px; min-width: 54px;
+  border-radius: 14px; display: flex;
+  align-items: center; justify-content: center;
+}
+
+/* ── Kanban ── */
+.kanban-col {
+  background: #eef0f5; border-radius: 14px; padding: 16px;
+  min-height: 480px; border: 2px solid transparent;
+  transition: background 0.2s, border-color 0.2s;
+}
+.kanban-col.drag-over { background: #e0edff; border-color: #4da8ff; }
+.kanban-col-header {
+  display: flex; align-items: center; gap: 8px;
+  font-weight: 600; font-size: 0.9rem;
+  margin-bottom: 14px; padding-bottom: 10px;
+  border-bottom: 1px solid rgba(0,0,0,0.07);
+}
+.dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.dot-secondary { background-color: #6c757d; }
+.dot-primary   { background-color: #0d6efd; }
+.dot-warning   { background-color: #ffc107; }
+.dot-success   { background-color: #198754; }
+
+.task-card {
+  background: #fff; border-radius: 10px; padding: 12px 14px;
+  margin-bottom: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  cursor: grab; border-left: 4px solid #dee2e6;
+  transition: box-shadow 0.2s, opacity 0.2s; user-select: none;
+}
+.task-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.12); }
+.task-card:active { cursor: grabbing; }
+.task-card.dragging { opacity: 0.45; box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
+.task-card.priority-HIGH   { border-left-color: #dc3545; }
+.task-card.priority-MEDIUM { border-left-color: #fd7e14; }
+.task-card.priority-LOW    { border-left-color: #20c997; }
+
+.task-container { min-height: 100px; }
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .sidebar { width: 60px; overflow: hidden; }
+  .sidebar-header h5, .sidebar-nav li a span,
+  .sidebar-footer .fw-semibold, .sidebar-footer small,
+  .sidebar-footer button { display: none; }
+  .sidebar-nav li a { justify-content: center; padding: 14px; }
+  .main-content { margin-left: 60px; padding: 16px; }
+}
