@@ -96,6 +96,12 @@
     </dependencies>
 
     <build>
+        <sourceDirectory>Backend/main/java</sourceDirectory>
+        <resources>
+            <resource>
+                <directory>Backend/main/resources</directory>
+            </resource>
+        </resources>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>

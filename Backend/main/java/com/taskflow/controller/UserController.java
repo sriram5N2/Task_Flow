@@ -24,11 +24,10 @@ public class UserController {
     private final UserRepository userRepository;
 
     /**
-     * Returns a simplified user list for task assignment dropdowns.
-     * Only accessible by ADMIN.
+     * Returns a simplified user list for task assignment dropdowns and the Kanban team filter.
+     * Accessible by any authenticated user.
      */
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<Map<String, Object>>> getAllUsers() {
         List<Map<String, Object>> users = userRepository.findAll().stream()
                 .map(u -> Map.<String, Object>of(

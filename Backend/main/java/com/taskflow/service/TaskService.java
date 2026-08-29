@@ -34,22 +34,11 @@ public class TaskService {
 
     /**
      * Get all tasks for a specific project (Kanban board view).
-     * ADMIN sees all tasks in the project.
-     * USER sees only tasks assigned to them within that project.
+     * All users can view all tasks in the project (to see team members' boards).
      */
     public List<TaskDTO> getTasksByProject(Long projectId) {
         Project project = projectRepository.findById(projectId).orElseThrow();
-        User user = getCurrentUser();
-
         List<Task> tasks = taskRepository.findByProjectOrderByCreatedAtDesc(project);
-
-        // If USER, filter to only their assigned tasks
-        if (user.getRole() != Role.ADMIN) {
-            tasks = tasks.stream()
-                    .filter(t -> t.getAssignedTo() != null && t.getAssignedTo().getId().equals(user.getId()))
-                    .collect(Collectors.toList());
-        }
-
         return tasks.stream().map(this::toDTO).collect(Collectors.toList());
     }
 
