@@ -112,7 +112,6 @@ export default function LoginPage() {
               </p>
             </form>
           )}
-
           {/* Register Form */}
           {tab === 'register' && (
             <form onSubmit={handleRegister}>
