@@ -64,4 +64,4 @@ On first startup, the application's `DataSeeder` will automatically create an ad
 *(Add your screenshots here! E.g., `![Kanban Board](/docs/board.png)`)*
 
 ---
-*Developed by [Your Name]*
+*Developed by Tharividi Sriram *
