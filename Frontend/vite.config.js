@@ -16,7 +16,7 @@ export default defineConfig({
   },
   build: {
     // Build into Spring Boot's static folder for production
-    outDir: '../src/main/resources/static',
+    outDir: '../Backend/main/resources/static',
     emptyOutDir: true,
   },
 });
