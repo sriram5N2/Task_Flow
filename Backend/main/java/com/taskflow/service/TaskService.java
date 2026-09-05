@@ -33,21 +33,21 @@ public class TaskService {
     }
 
     /**
-     * Get all top-level tasks for a specific project (Kanban board view).
-     * All users can view all tasks in the project (to see team members' boards).
+     * Get all tasks for a specific project (Kanban board view).
+     * Includes subtasks so they appear as cards on the board when assigned.
      */
     public List<TaskDTO> getTasksByProject(Long projectId) {
         Project project = projectRepository.findById(projectId).orElseThrow();
-        List<Task> tasks = taskRepository.findByProjectAndParentTaskIsNullOrderByCreatedAtDesc(project);
+        List<Task> tasks = taskRepository.findByProjectOrderByCreatedAtDesc(project);
         return tasks.stream().map(this::toDTO).collect(Collectors.toList());
     }
 
     /**
-     * Get all top-level tasks.
-     * All users can view all tasks (to see their team members' boards).
+     * Get all tasks including subtasks.
+     * Subtasks appear on the board as individual cards alongside their parents.
      */
     public List<TaskDTO> getAllTasks() {
-        return taskRepository.findByParentTaskIsNull().stream().map(this::toDTO).collect(Collectors.toList());
+        return taskRepository.findAll().stream().map(this::toDTO).collect(Collectors.toList());
     }
 
     /**
