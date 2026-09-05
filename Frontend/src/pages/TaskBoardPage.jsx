@@ -5,7 +5,7 @@ import { toast } from 'react-toastify';
 import Sidebar from '../components/Sidebar';
 import { taskApi, projectApi, userApi, commentApi } from '../api';
 import { useAuth } from '../context/AuthContext';
-import { BsPlusLg, BsPencil, BsTrash, BsThreeDotsVertical, BsHandIndex, BsInbox, BsFolder, BsPerson, BsBook, BsBug, BsClipboardCheck, BsSend, BsDiagram3, BsArrowLeft, BsChevronRight } from 'react-icons/bs';
+import { BsPlusLg, BsPencil, BsTrash, BsThreeDotsVertical, BsHandIndex, BsInbox, BsFolder, BsPerson, BsBook, BsBug, BsClipboardCheck, BsSend, BsDiagram3, BsArrowLeft, BsChevronRight, BsSearch, BsFilter } from 'react-icons/bs';
 
 const COLUMNS = [
   { status: 'TODO',        label: 'To Do',        dotClass: 'dot-secondary', badgeBg: 'bg-secondary' },
@@ -27,15 +27,28 @@ const TYPE_ICONS = {
   SUBTASK: <BsDiagram3 className="text-info me-1" title="Subtask" />
 };
 
+const Avatar = ({ name, size = 24, className = '' }) => {
+  if (!name) return null;
+  const url = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random&color=fff&size=${size}&bold=true`;
+  return <img src={url} alt={name} title={name} className={`rounded-circle border shadow-sm ${className}`} style={{ width: size, height: size, objectFit: 'cover' }} />;
+};
+
 export default function TaskBoardPage() {
   const { user, isAdmin } = useAuth();
   const [searchParams] = useSearchParams();
   const preselectedProject = searchParams.get('project') || '';
 
   const [tasks, setTasks] = useState([]);
+  const [isLoadingTasks, setIsLoadingTasks] = useState(true);
   const [projects, setProjects] = useState([]);
   const [users, setUsers] = useState([]);
+  
+  // Filters
   const [filterProject, setFilterProject] = useState(preselectedProject);
+  const [selectedAssignee, setSelectedAssignee] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterPriority, setFilterPriority] = useState('');
+  const [filterType, setFilterType] = useState('');
   
   // Modal states
   const [showModal, setShowModal] = useState(false);
@@ -62,8 +75,6 @@ export default function TaskBoardPage() {
   const draggedId = useRef(null);
   const commentsEndRef = useRef(null);
 
-  const [selectedAssignee, setSelectedAssignee] = useState('');
-
   // ── Load Data ──
   useEffect(() => {
     projectApi.getAll().then(setProjects).catch(console.error);
@@ -75,7 +86,14 @@ export default function TaskBoardPage() {
   }, [filterProject]);
 
   const loadTasks = (projId) => {
-    taskApi.getAll(projId || null).then(setTasks).catch(console.error);
+    setIsLoadingTasks(true);
+    taskApi.getAll(projId || null).then(res => {
+      setTasks(res);
+      setIsLoadingTasks(false);
+    }).catch(err => {
+      console.error(err);
+      setIsLoadingTasks(false);
+    });
   };
 
   const loadComments = (taskId) => {
@@ -256,19 +274,48 @@ export default function TaskBoardPage() {
       <div className="main-content">
 
         {/* Topbar */}
-        <div className="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom flex-wrap gap-2">
+        <div className="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom flex-wrap gap-3">
           <div>
             <h4 className="fw-bold mb-1">Board</h4>
             <small className="text-muted"><BsHandIndex className="me-1" />Drag tickets between columns</small>
           </div>
-          <div className="d-flex gap-2 flex-wrap">
-            <Form.Select size="sm" style={{ minWidth: 180 }} value={filterProject}
+          
+          {/* Filters & Actions */}
+          <div className="d-flex gap-2 flex-wrap align-items-center flex-grow-1 justify-content-end">
+            
+            {/* Search */}
+            <div className="input-group input-group-sm" style={{ maxWidth: '250px' }}>
+              <span className="input-group-text bg-white text-muted border-end-0"><BsSearch /></span>
+              <input type="text" className="form-control border-start-0 ps-0" placeholder="Search tasks..." 
+                     value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+            </div>
+
+            {/* Type Filter */}
+            <Form.Select size="sm" style={{ width: '130px' }} value={filterType} onChange={e => setFilterType(e.target.value)}>
+              <option value="">All Types</option>
+              <option value="STORY">📖 Story</option>
+              <option value="TASK">📋 Task</option>
+              <option value="BUG">🐞 Bug</option>
+              <option value="SUBTASK">💠 Subtask</option>
+            </Form.Select>
+
+            {/* Priority Filter */}
+            <Form.Select size="sm" style={{ width: '130px' }} value={filterPriority} onChange={e => setFilterPriority(e.target.value)}>
+              <option value="">All Priorities</option>
+              <option value="HIGH">🔴 High</option>
+              <option value="MEDIUM">🟡 Medium</option>
+              <option value="LOW">🟢 Low</option>
+            </Form.Select>
+
+            {/* Project Filter */}
+            <Form.Select size="sm" style={{ width: '150px' }} value={filterProject}
                          onChange={e => setFilterProject(e.target.value)}>
               <option value="">All Projects</option>
               {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
             </Form.Select>
+            
             {isAdmin && (
-              <button className="btn btn-primary btn-sm fw-semibold" onClick={openCreate}>
+              <button className="btn btn-primary btn-sm fw-semibold ms-2" onClick={openCreate}>
                 <BsPlusLg className="me-1" />New Ticket
               </button>
             )}
@@ -298,9 +345,18 @@ export default function TaskBoardPage() {
         <div className="row g-3">
           {COLUMNS.map(col => {
             let colTasks = tasks.filter(t => t.status === col.status);
-            if (selectedAssignee) {
-              colTasks = colTasks.filter(t => t.assignedToId === selectedAssignee);
+            if (selectedAssignee) colTasks = colTasks.filter(t => t.assignedToId === selectedAssignee);
+            if (filterPriority) colTasks = colTasks.filter(t => t.priority === filterPriority);
+            if (filterType) colTasks = colTasks.filter(t => t.type === filterType);
+            if (searchQuery) {
+              const q = searchQuery.toLowerCase();
+              colTasks = colTasks.filter(t => 
+                (t.title && t.title.toLowerCase().includes(q)) || 
+                (t.description && t.description.toLowerCase().includes(q)) ||
+                (t.id && t.id.toString() === q)
+              );
             }
+
             return (
               <div className="col-md-3" key={col.status}>
                 <div className="kanban-col"
@@ -312,12 +368,17 @@ export default function TaskBoardPage() {
                     <span className={`badge ${col.badgeBg} ms-auto rounded-pill`}>{colTasks.length}</span>
                   </div>
                   <div className="task-container">
-                    {colTasks.length === 0 && (
+                    {isLoadingTasks ? (
+                      <>
+                        <div className="task-card skeleton" style={{ height: 110 }} />
+                        <div className="task-card skeleton" style={{ height: 130 }} />
+                        <div className="task-card skeleton" style={{ height: 100 }} />
+                      </>
+                    ) : colTasks.length === 0 ? (
                       <div className="text-center text-muted small py-4 opacity-50">
                         <BsInbox className="fs-4 d-block mb-1 mx-auto" />Empty
                       </div>
-                    )}
-                    {colTasks.map(t => {
+                    ) : colTasks.map(t => {
                       const pc = PRIORITY_COLORS[t.priority] || { badge: 'secondary', emoji: '' };
                       const isDone = t.status === 'DONE';
                       const canDrag = isAdmin || t.assignedToId === user.id;
@@ -363,15 +424,15 @@ export default function TaskBoardPage() {
                             )}
                           </div>
                           
-                          <div className="mt-2 pt-2 border-top d-flex justify-content-between">
-                            <small className="text-muted" style={{ fontSize: '0.65rem' }} title="Reporter">
-                              📝 {t.reporterName || 'Unknown'}
-                            </small>
-                            {t.assignedToName && (
-                              <small className="text-muted" style={{ fontSize: '0.65rem' }} title="Assignee">
-                                <BsPerson className="me-1" />{t.assignedToName}
-                              </small>
-                            )}
+                          <div className="mt-2 pt-2 border-top d-flex justify-content-between align-items-center">
+                            <div className="d-flex align-items-center gap-1" title={`Reporter: ${t.reporterName || 'Unknown'}`}>
+                              <Avatar name={t.reporterName || 'Unknown'} size={20} />
+                              <span className="text-muted" style={{ fontSize: '0.65rem' }}>{t.reporterName ? t.reporterName.split(' ')[0] : 'None'}</span>
+                            </div>
+                            <div className="d-flex align-items-center gap-1" title={`Assignee: ${t.assignedToName || 'Unassigned'}`}>
+                              <span className="text-muted" style={{ fontSize: '0.65rem' }}>{t.assignedToName ? t.assignedToName.split(' ')[0] : 'Unassigned'}</span>
+                              <Avatar name={t.assignedToName} size={20} />
+                            </div>
                           </div>
                         </div>
                       );

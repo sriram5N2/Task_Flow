@@ -45,7 +45,12 @@ export default function Sidebar() {
 
       <div className="sidebar-footer">
         <div className="d-flex align-items-center gap-2 mb-3">
-          <div className="avatar">{initials}</div>
+          <img 
+            src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=random&color=fff&size=40&bold=true`} 
+            alt={user?.name} 
+            className="rounded-circle border border-secondary" 
+            style={{ width: '40px', height: '40px' }} 
+          />
           <div className="overflow-hidden">
             <div className="fw-semibold text-white text-truncate">{user?.name || 'User'}</div>
             <small className="text-light opacity-75">{user?.role || ''}</small>
