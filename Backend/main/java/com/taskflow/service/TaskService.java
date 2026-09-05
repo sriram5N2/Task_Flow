@@ -51,6 +51,14 @@ public class TaskService {
     }
 
     /**
+     * Get a single task by ID.
+     */
+    public TaskDTO getTaskById(Long id) {
+        Task task = taskRepository.findById(id).orElseThrow();
+        return toDTO(task);
+    }
+
+    /**
      * Get all subtasks for a specific parent task.
      */
     public List<TaskDTO> getSubtasks(Long parentId) {
