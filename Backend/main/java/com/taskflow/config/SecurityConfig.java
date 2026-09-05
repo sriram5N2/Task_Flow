@@ -93,11 +93,12 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.PUT, "/api/projects/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.DELETE, "/api/projects/**").hasRole("ADMIN")
 
-                // ── Any authenticated user can access comments ──
+                // ── Any authenticated user can access comments & subtasks ──
                 .requestMatchers("/api/tasks/*/comments/**").authenticated()
+                .requestMatchers(HttpMethod.GET, "/api/tasks/*/subtasks").authenticated()
 
-                // ── ADMIN-only: task create, full edit, delete ──
-                .requestMatchers(HttpMethod.POST, "/api/tasks/**").hasRole("ADMIN")
+                // ── ADMIN-only: full edit, delete (Create is checked in service to allow subtasks) ──
+                .requestMatchers(HttpMethod.POST, "/api/tasks/**").authenticated()
                 .requestMatchers(HttpMethod.PUT, "/api/tasks/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.DELETE, "/api/tasks/**").hasRole("ADMIN")
 

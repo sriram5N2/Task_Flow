@@ -50,6 +50,15 @@ public class DataSeeder implements CommandLineRunner {
         jdbcTemplate.update("UPDATE tasks SET type = 'TASK' WHERE type IS NULL");
         jdbcTemplate.update("UPDATE comments SET version = 0 WHERE version IS NULL");
 
+        // Subtask support: Ensure parent_task_id column exists (Hibernate should create it, but be safe)
+        try {
+            jdbcTemplate.execute("ALTER TABLE tasks ADD COLUMN parent_task_id BIGINT NULL");
+            jdbcTemplate.execute("ALTER TABLE tasks ADD CONSTRAINT fk_parent_task FOREIGN KEY (parent_task_id) REFERENCES tasks(id)");
+            log.info("Added parent_task_id column to tasks table");
+        } catch (Exception e) {
+            log.debug("parent_task_id column already exists or migration not needed: {}", e.getMessage());
+        }
+
         if (userRepository.existsByEmail(adminEmail)) {
             log.info("Admin account already exists: {}", adminEmail);
             return;

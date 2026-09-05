@@ -33,26 +33,55 @@ public class TaskService {
     }
 
     /**
-     * Get all tasks for a specific project (Kanban board view).
+     * Get all top-level tasks for a specific project (Kanban board view).
      * All users can view all tasks in the project (to see team members' boards).
      */
     public List<TaskDTO> getTasksByProject(Long projectId) {
         Project project = projectRepository.findById(projectId).orElseThrow();
-        List<Task> tasks = taskRepository.findByProjectOrderByCreatedAtDesc(project);
+        List<Task> tasks = taskRepository.findByProjectAndParentTaskIsNullOrderByCreatedAtDesc(project);
         return tasks.stream().map(this::toDTO).collect(Collectors.toList());
     }
 
     /**
-     * Get all tasks.
+     * Get all top-level tasks.
      * All users can view all tasks (to see their team members' boards).
      */
     public List<TaskDTO> getAllTasks() {
-        return taskRepository.findAll().stream().map(this::toDTO).collect(Collectors.toList());
+        return taskRepository.findByParentTaskIsNull().stream().map(this::toDTO).collect(Collectors.toList());
     }
 
-    /** Create a new task inside a project (ADMIN only — enforced by SecurityConfig). */
+    /**
+     * Get all subtasks for a specific parent task.
+     */
+    public List<TaskDTO> getSubtasks(Long parentId) {
+        Task parentTask = taskRepository.findById(parentId).orElseThrow();
+        List<Task> subtasks = taskRepository.findByParentTaskOrderByCreatedAtDesc(parentTask);
+        return subtasks.stream().map(this::toDTO).collect(Collectors.toList());
+    }
+
+    /** Create a new task or subtask. ADMIN only for regular tasks, but ANY authenticated user can create a SUBTASK. */
     public TaskDTO createTask(TaskDTO dto) {
-        Project project = projectRepository.findById(dto.getProjectId()).orElseThrow();
+        User currentUser = getCurrentUser();
+        
+        // Security check: Only Admin can create top-level tasks. Anyone can create subtasks.
+        if (dto.getParentTaskId() == null && currentUser.getRole() != Role.ADMIN) {
+            throw new RuntimeException("Only admins can create top-level tickets.");
+        }
+
+        Task parentTask = null;
+        Project project;
+        String sprint = dto.getSprint();
+
+        if (dto.getParentTaskId() != null) {
+            parentTask = taskRepository.findById(dto.getParentTaskId()).orElseThrow();
+            project = parentTask.getProject(); // Inherit project from parent
+            if (sprint == null || sprint.trim().isEmpty()) {
+                sprint = parentTask.getSprint(); // Inherit sprint if not provided
+            }
+        } else {
+            project = projectRepository.findById(dto.getProjectId()).orElseThrow();
+        }
+
         User assignedTo = null;
         if (dto.getAssignedToId() != null) {
             assignedTo = userRepository.findById(dto.getAssignedToId()).orElse(null);
@@ -61,19 +90,20 @@ public class TaskService {
         if (dto.getReporterId() != null) {
             reporter = userRepository.findById(dto.getReporterId()).orElse(null);
         } else {
-            reporter = getCurrentUser(); // Default to admin creating it
+            reporter = currentUser;
         }
 
         Task task = Task.builder()
                 .title(dto.getTitle())
                 .description(dto.getDescription())
-                .sprint(dto.getSprint())
+                .sprint(sprint)
                 .type(dto.getType() != null ? dto.getType() : TaskType.TASK)
                 .status(dto.getStatus() != null ? dto.getStatus() : TaskStatus.TODO)
                 .priority(dto.getPriority() != null ? dto.getPriority() : Priority.MEDIUM)
                 .project(project)
                 .assignedTo(assignedTo)
                 .reporter(reporter)
+                .parentTask(parentTask)
                 .build();
 
         return toDTO(taskRepository.save(task));
@@ -168,6 +198,14 @@ public class TaskService {
             dto.setReporterId(t.getReporter().getId());
             dto.setReporterName(t.getReporter().getName());
         }
+        if (t.getParentTask() != null) {
+            dto.setParentTaskId(t.getParentTask().getId());
+            dto.setParentTaskTitle(t.getParentTask().getTitle());
+        }
+        
+        // We do not eagerly map the complete subtasks list to DTOs in a deep way to avoid infinite recursion / massive payloads.
+        // The subtasks will be explicitly fetched via getSubtasks(Long parentId) when the ticket details are opened.
+        
         return dto;
     }
 }
