@@ -5,7 +5,7 @@ import { toast } from 'react-toastify';
 import Sidebar from '../components/Sidebar';
 import { taskApi, projectApi, userApi, commentApi } from '../api';
 import { useAuth } from '../context/AuthContext';
-import { BsPlusLg, BsPencil, BsTrash, BsThreeDotsVertical, BsHandIndex, BsInbox, BsFolder, BsPerson, BsBook, BsBug, BsClipboardCheck, BsSend } from 'react-icons/bs';
+import { BsPlusLg, BsPencil, BsTrash, BsThreeDotsVertical, BsHandIndex, BsInbox, BsFolder, BsPerson, BsBook, BsBug, BsClipboardCheck, BsSend, BsDiagram3 } from 'react-icons/bs';
 
 const COLUMNS = [
   { status: 'TODO',        label: 'To Do',        dotClass: 'dot-secondary', badgeBg: 'bg-secondary' },
@@ -23,7 +23,8 @@ const PRIORITY_COLORS = {
 const TYPE_ICONS = {
   STORY: <BsBook className="text-primary me-1" title="User Story" />,
   BUG:   <BsBug className="text-danger me-1" title="Bug" />,
-  TASK:  <BsClipboardCheck className="text-secondary me-1" title="Task" />
+  TASK:  <BsClipboardCheck className="text-secondary me-1" title="Task" />,
+  SUBTASK: <BsDiagram3 className="text-info me-1" title="Subtask" />
 };
 
 export default function TaskBoardPage() {
@@ -43,12 +44,20 @@ export default function TaskBoardPage() {
     title: '', description: '', projectId: '', priority: 'MEDIUM', 
     status: 'TODO', assignedToId: '', reporterId: '', type: 'TASK', sprint: '' 
   });
+  const [rightTab, setRightTab] = useState('comments'); // 'comments' | 'subtasks'
   
   // Comments state
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editCommentText, setEditCommentText] = useState('');
+
+  // Subtasks state
+  const [subtasks, setSubtasks] = useState([]);
+  const [creatingSubtask, setCreatingSubtask] = useState(false);
+  const [subtaskForm, setSubtaskForm] = useState({
+    title: '', description: '', priority: 'MEDIUM', reporterId: '', assignedToId: ''
+  });
 
   const draggedId = useRef(null);
   const commentsEndRef = useRef(null);
@@ -74,6 +83,10 @@ export default function TaskBoardPage() {
       setComments(res);
       setTimeout(() => commentsEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
     }).catch(console.error);
+  };
+
+  const loadSubtasks = (taskId) => {
+    taskApi.getSubtasks(taskId).then(setSubtasks).catch(console.error);
   };
 
   // ── Drag & Drop ──
@@ -122,6 +135,9 @@ export default function TaskBoardPage() {
       status: 'TODO', assignedToId: '', reporterId: user?.id || '', type: 'TASK', sprint: '' 
     });
     setComments([]);
+    setSubtasks([]);
+    setRightTab('comments');
+    setCreatingSubtask(false);
     setShowModal(true);
   };
 
@@ -135,8 +151,32 @@ export default function TaskBoardPage() {
       version: t.version
     });
     setComments([]);
+    setSubtasks([]);
+    setRightTab('comments');
+    setCreatingSubtask(false);
     setShowModal(true);
     loadComments(t.id);
+    loadSubtasks(t.id);
+  };
+
+  const handleCreateSubtask = async (e) => {
+    e.preventDefault();
+    if (!subtaskForm.title.trim()) return;
+    try {
+      const dto = {
+        ...subtaskForm,
+        reporterId: subtaskForm.reporterId ? Number(subtaskForm.reporterId) : null,
+        assignedToId: subtaskForm.assignedToId ? Number(subtaskForm.assignedToId) : null
+      };
+      await taskApi.createSubtask(editing.id, dto);
+      toast.success('Subtask created!');
+      setCreatingSubtask(false);
+      setSubtaskForm({ title: '', description: '', priority: 'MEDIUM', reporterId: '', assignedToId: '' });
+      loadSubtasks(editing.id);
+      loadTasks(filterProject); // optional: refresh board tasks if showing progress
+    } catch (err) {
+      toast.error(err.message || 'Failed to create subtask');
+    }
   };
 
   const handleSaveTicket = async () => {
@@ -450,68 +490,155 @@ export default function TaskBoardPage() {
                 </Form>
               </div>
 
-              {/* Right Side: Comments (Only visible if editing existing ticket) */}
+              {/* Right Side: Activity & Subtasks */}
               {editing && (
                 <div className="col-lg-5 d-flex flex-column bg-light" style={{ maxHeight: '75vh' }}>
-                  <div className="p-3 border-bottom bg-white fw-bold d-flex justify-content-between align-items-center">
-                    <span>Activity & Comments</span>
-                    <span className="badge bg-secondary rounded-pill">{comments.length}</span>
+                  <div className="p-0 border-bottom bg-white d-flex">
+                    <button type="button" className={`btn rounded-0 flex-fill py-3 fw-bold border-bottom ${rightTab === 'comments' ? 'border-primary text-primary' : 'border-transparent text-muted'}`}
+                            style={{ borderBottomWidth: '3px !important' }}
+                            onClick={() => setRightTab('comments')}>
+                      Comments <span className="badge bg-secondary ms-1 rounded-pill">{comments.length}</span>
+                    </button>
+                    <button type="button" className={`btn rounded-0 flex-fill py-3 fw-bold border-bottom ${rightTab === 'subtasks' ? 'border-primary text-primary' : 'border-transparent text-muted'}`}
+                            style={{ borderBottomWidth: '3px !important' }}
+                            onClick={() => setRightTab('subtasks')}>
+                      Subtasks <span className="badge bg-secondary ms-1 rounded-pill">{subtasks.length}</span>
+                    </button>
                   </div>
                   
-                  <div className="flex-fill p-3 overflow-auto">
-                    {comments.length === 0 ? (
-                      <div className="text-center text-muted small mt-4 opacity-50">
-                        No comments yet. Start the conversation!
-                      </div>
-                    ) : (
-                      comments.map(c => (
-                        <div key={c.id} className="card border-0 shadow-sm mb-3">
-                          <div className="card-header bg-white border-bottom-0 py-2 d-flex justify-content-between align-items-center">
-                            <strong className="small">{c.authorName}</strong>
-                            <small className="text-muted" style={{ fontSize: '0.7rem' }}>
-                              {new Date(c.createdAt).toLocaleString('en-US', { 
-                                year: 'numeric', month: 'short', day: 'numeric', 
-                                hour: 'numeric', minute: '2-digit' 
-                              })}
-                            </small>
+                  {rightTab === 'comments' && (
+                    <>
+                      <div className="flex-fill p-3 overflow-auto">
+                        {comments.length === 0 ? (
+                          <div className="text-center text-muted small mt-4 opacity-50">
+                            No comments yet. Start the conversation!
                           </div>
-                          <div className="card-body py-2 pt-0">
-                            {editingCommentId === c.id ? (
-                              <div>
-                                <textarea className="form-control form-control-sm mb-2" rows={2} 
-                                          value={editCommentText} onChange={e => setEditCommentText(e.target.value)} />
-                                <div className="d-flex gap-1 justify-content-end">
-                                  <button className="btn btn-sm btn-light py-0 px-2" onClick={() => setEditingCommentId(null)}>Cancel</button>
-                                  <button className="btn btn-sm btn-primary py-0 px-2" onClick={() => handleUpdateComment(c)}>Save</button>
-                                </div>
+                        ) : (
+                          comments.map(c => (
+                            <div key={c.id} className="card border-0 shadow-sm mb-3">
+                              <div className="card-header bg-white border-bottom-0 py-2 d-flex justify-content-between align-items-center">
+                                <strong className="small">{c.authorName}</strong>
+                                <small className="text-muted" style={{ fontSize: '0.7rem' }}>
+                                  {new Date(c.createdAt).toLocaleString('en-US', { 
+                                    year: 'numeric', month: 'short', day: 'numeric', 
+                                    hour: 'numeric', minute: '2-digit' 
+                                  })}
+                                </small>
                               </div>
-                            ) : (
-                              <p className="mb-0 small" style={{ whiteSpace: 'pre-wrap' }}>{c.text}</p>
+                              <div className="card-body py-2 pt-0">
+                                {editingCommentId === c.id ? (
+                                  <div>
+                                    <textarea className="form-control form-control-sm mb-2" rows={2} 
+                                              value={editCommentText} onChange={e => setEditCommentText(e.target.value)} />
+                                    <div className="d-flex gap-1 justify-content-end">
+                                      <button type="button" className="btn btn-sm btn-light py-0 px-2" onClick={() => setEditingCommentId(null)}>Cancel</button>
+                                      <button type="button" className="btn btn-sm btn-primary py-0 px-2" onClick={() => handleUpdateComment(c)}>Save</button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <p className="mb-0 small" style={{ whiteSpace: 'pre-wrap' }}>{c.text}</p>
+                                )}
+                              </div>
+                              {c.authorId === user.id && editingCommentId !== c.id && (
+                                <div className="card-footer bg-white border-top-0 pt-0 text-end">
+                                  <button type="button" className="btn btn-link btn-sm p-0 text-muted small text-decoration-none" 
+                                          onClick={() => { setEditingCommentId(c.id); setEditCommentText(c.text); }}>
+                                    Edit
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          ))
+                        )}
+                        <div ref={commentsEndRef} />
+                      </div>
+    
+                      <div className="p-3 bg-white border-top">
+                        <form onSubmit={handlePostComment} className="d-flex gap-2">
+                          <input type="text" className="form-control" placeholder="Add a comment..."
+                                 value={newComment} onChange={e => setNewComment(e.target.value)} />
+                          <button type="submit" className="btn btn-primary px-3" disabled={!newComment.trim()}>
+                            <BsSend />
+                          </button>
+                        </form>
+                      </div>
+                    </>
+                  )}
+
+                  {rightTab === 'subtasks' && (
+                    <div className="flex-fill p-3 overflow-auto d-flex flex-column gap-3">
+                      {subtasks.length === 0 && !creatingSubtask && (
+                        <div className="text-center text-muted small mt-4 opacity-50">
+                          No subtasks yet. Break down your work!
+                        </div>
+                      )}
+                      
+                      {subtasks.map(st => (
+                        <div key={st.id} className="card border-0 shadow-sm" style={{ cursor: 'pointer' }} onClick={() => openDetails(st)}>
+                          <div className="card-body p-2 d-flex align-items-center gap-2">
+                            <span className={`badge bg-${PRIORITY_COLORS[st.priority]?.badge || 'secondary'}`} style={{ fontSize: '0.6rem' }}>
+                              {st.status}
+                            </span>
+                            <span className={`fw-semibold small flex-fill text-truncate ${st.status === 'DONE' ? 'text-decoration-line-through text-muted' : ''}`}>
+                              {st.title}
+                            </span>
+                            {st.assignedToName && (
+                              <small className="text-muted text-nowrap" style={{ fontSize: '0.7rem' }} title="Assignee">
+                                <BsPerson className="me-1" />{st.assignedToName.split(' ')[0]}
+                              </small>
                             )}
                           </div>
-                          {c.authorId === user.id && editingCommentId !== c.id && (
-                            <div className="card-footer bg-white border-top-0 pt-0 text-end">
-                              <button className="btn btn-link btn-sm p-0 text-muted small text-decoration-none" 
-                                      onClick={() => { setEditingCommentId(c.id); setEditCommentText(c.text); }}>
-                                Edit
-                              </button>
-                            </div>
-                          )}
                         </div>
-                      ))
-                    )}
-                    <div ref={commentsEndRef} />
-                  </div>
+                      ))}
 
-                  <div className="p-3 bg-white border-top">
-                    <form onSubmit={handlePostComment} className="d-flex gap-2">
-                      <input type="text" className="form-control" placeholder="Add a comment..."
-                             value={newComment} onChange={e => setNewComment(e.target.value)} />
-                      <button type="submit" className="btn btn-primary px-3" disabled={!newComment.trim()}>
-                        <BsSend />
-                      </button>
-                    </form>
-                  </div>
+                      {creatingSubtask ? (
+                        <div className="card border shadow-sm">
+                          <div className="card-body p-3">
+                            <form onSubmit={handleCreateSubtask}>
+                              <div className="mb-2">
+                                <input type="text" className="form-control form-control-sm" placeholder="Subtask title *" 
+                                       value={subtaskForm.title} onChange={e => setSubtaskForm({...subtaskForm, title: e.target.value})} autoFocus required />
+                              </div>
+                              <div className="mb-2">
+                                <textarea className="form-control form-control-sm" placeholder="Description (optional)" rows={2}
+                                          value={subtaskForm.description} onChange={e => setSubtaskForm({...subtaskForm, description: e.target.value})} />
+                              </div>
+                              <div className="row g-2 mb-3">
+                                <div className="col-4">
+                                  <select className="form-select form-select-sm" value={subtaskForm.priority} onChange={e => setSubtaskForm({...subtaskForm, priority: e.target.value})}>
+                                    <option value="LOW">Low</option>
+                                    <option value="MEDIUM">Medium</option>
+                                    <option value="HIGH">High</option>
+                                  </select>
+                                </div>
+                                <div className="col-4">
+                                  <select className="form-select form-select-sm" value={subtaskForm.reporterId} onChange={e => setSubtaskForm({...subtaskForm, reporterId: e.target.value})}>
+                                    <option value="">Reporter</option>
+                                    <option value={user?.id}>{user?.name} (Me)</option>
+                                    {users.filter(u => u.id !== user?.id).map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                                  </select>
+                                </div>
+                                <div className="col-4">
+                                  <select className="form-select form-select-sm" value={subtaskForm.assignedToId} onChange={e => setSubtaskForm({...subtaskForm, assignedToId: e.target.value})}>
+                                    <option value="">Assignee</option>
+                                    {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                                  </select>
+                                </div>
+                              </div>
+                              <div className="d-flex justify-content-end gap-2">
+                                <button type="button" className="btn btn-sm btn-light" onClick={() => setCreatingSubtask(false)}>Cancel</button>
+                                <button type="submit" className="btn btn-sm btn-primary">Create</button>
+                              </div>
+                            </form>
+                          </div>
+                        </div>
+                      ) : (
+                        <button type="button" className="btn btn-outline-primary btn-sm mt-2 align-self-start" onClick={() => setCreatingSubtask(true)}>
+                          <BsPlusLg className="me-1" /> Create Subtask
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
               
