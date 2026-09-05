@@ -58,6 +58,7 @@ export const taskApi = {
     const url = projectId ? `${BASE}/api/tasks?projectId=${projectId}` : `${BASE}/api/tasks`;
     return fetch(url, { headers: getHeaders() }).then(handleResponse);
   },
+  getById:        (id) => fetch(`${BASE}/api/tasks/${id}`, { headers: getHeaders() }).then(handleResponse),
   getSubtasks:    (parentId) => fetch(`${BASE}/api/tasks/${parentId}/subtasks`, { headers: getHeaders() }).then(handleResponse),
   create:         (data) => fetch(`${BASE}/api/tasks`, { method: 'POST', headers: getHeaders(), body: JSON.stringify(data) }).then(handleResponse),
   createSubtask:  (parentId, data) => fetch(`${BASE}/api/tasks`, { method: 'POST', headers: getHeaders(), body: JSON.stringify({ ...data, parentTaskId: parentId, type: 'SUBTASK' }) }).then(handleResponse),

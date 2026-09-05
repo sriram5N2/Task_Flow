@@ -5,7 +5,7 @@ import { toast } from 'react-toastify';
 import Sidebar from '../components/Sidebar';
 import { taskApi, projectApi, userApi, commentApi } from '../api';
 import { useAuth } from '../context/AuthContext';
-import { BsPlusLg, BsPencil, BsTrash, BsThreeDotsVertical, BsHandIndex, BsInbox, BsFolder, BsPerson, BsBook, BsBug, BsClipboardCheck, BsSend, BsDiagram3 } from 'react-icons/bs';
+import { BsPlusLg, BsPencil, BsTrash, BsThreeDotsVertical, BsHandIndex, BsInbox, BsFolder, BsPerson, BsBook, BsBug, BsClipboardCheck, BsSend, BsDiagram3, BsArrowLeft, BsChevronRight } from 'react-icons/bs';
 
 const COLUMNS = [
   { status: 'TODO',        label: 'To Do',        dotClass: 'dot-secondary', badgeBg: 'bg-secondary' },
@@ -148,7 +148,7 @@ export default function TaskBoardPage() {
       projectId: t.projectId || '', priority: t.priority || 'MEDIUM',
       status: t.status || 'TODO', assignedToId: t.assignedToId || '',
       reporterId: t.reporterId || '', type: t.type || 'TASK', sprint: t.sprint || '',
-      version: t.version
+      version: t.version, parentTaskId: t.parentTaskId, parentTaskTitle: t.parentTaskTitle
     });
     setComments([]);
     setSubtasks([]);
@@ -157,6 +157,15 @@ export default function TaskBoardPage() {
     setShowModal(true);
     loadComments(t.id);
     loadSubtasks(t.id);
+  };
+
+  const handleReturnToParent = async (parentId) => {
+    try {
+      const parentTask = await taskApi.getById(parentId);
+      openDetails(parentTask);
+    } catch (err) {
+      toast.error('Failed to load parent task');
+    }
   };
 
   const handleCreateSubtask = async (e) => {
@@ -377,14 +386,38 @@ export default function TaskBoardPage() {
         {/* ── Ticket Details / Edit Modal ── */}
         <Modal show={showModal} onHide={() => setShowModal(false)} size={editing ? "xl" : "lg"} centered>
           <Modal.Header closeButton className="border-bottom-0 pb-0 bg-light">
-            <Modal.Title className="fw-bold d-flex align-items-center gap-2">
-              {editing ? (
-                <>
-                  {TYPE_ICONS[form.type]}
-                  {form.title}
-                </>
-              ) : 'Create New Ticket'}
-            </Modal.Title>
+            <div className="d-flex flex-column w-100">
+              {/* Breadcrumb: Only visible when viewing a subtask */}
+              {editing && form.parentTaskId && (
+                <nav className="d-flex align-items-center mb-2" style={{ fontSize: '0.82rem' }}>
+                  <button className="btn btn-link btn-sm p-0 text-decoration-none text-primary fw-semibold"
+                          onClick={() => handleReturnToParent(form.parentTaskId)}
+                          style={{ fontSize: '0.82rem' }}>
+                    {form.parentTaskTitle || `Task-${form.parentTaskId}`}
+                  </button>
+                  <BsChevronRight className="mx-2 text-muted" style={{ fontSize: '0.65rem' }} />
+                  <span className="text-dark fw-semibold text-truncate" style={{ maxWidth: 280 }} title={form.title}>
+                    {form.title || `Subtask-${editing.id}`}
+                  </span>
+                </nav>
+              )}
+              <Modal.Title className="fw-bold d-flex align-items-center gap-2">
+                {editing ? (
+                  <>
+                    {TYPE_ICONS[form.type]}
+                    {form.title}
+                  </>
+                ) : 'Create New Ticket'}
+              </Modal.Title>
+              {/* Return to Parent link */}
+              {editing && form.parentTaskId && (
+                <button className="btn btn-link btn-sm p-0 text-decoration-none text-primary d-flex align-items-center mt-1 mb-1"
+                        onClick={() => handleReturnToParent(form.parentTaskId)}
+                        style={{ fontSize: '0.8rem', width: 'fit-content' }}>
+                  <BsArrowLeft className="me-1" /> Return to Parent Task
+                </button>
+              )}
+            </div>
           </Modal.Header>
           <Modal.Body className="p-0 bg-light">
             <div className="row g-0">
