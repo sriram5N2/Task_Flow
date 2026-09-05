@@ -55,6 +55,14 @@ public class TaskController {
         return ResponseEntity.ok(taskService.updateStatus(id, body.get("status")));
     }
 
+    /**
+     * Get all subtasks for a specific parent task.
+     */
+    @GetMapping("/{id}/subtasks")
+    public ResponseEntity<List<TaskDTO>> getSubtasks(@PathVariable Long id) {
+        return ResponseEntity.ok(taskService.getSubtasks(id));
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         taskService.deleteTask(id);

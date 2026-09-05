@@ -33,6 +33,13 @@ public class TaskDTO {
     private Long reporterId;
     private String reporterName;
 
+    // Parent task info (for subtasks)
+    private Long parentTaskId;
+    private String parentTaskTitle;
+
+    // Subtasks (populated when fetching parent details)
+    private java.util.List<TaskDTO> subtasks;
+
     // Audit
     private LocalDateTime createdAt;
 }
