@@ -20,4 +20,13 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
 
     /** Get tasks by project ordered by creation date. */
     List<Task> findByProjectOrderByCreatedAtDesc(Project project);
+
+    /** Get all subtasks for a parent task. */
+    List<Task> findByParentTaskOrderByCreatedAtDesc(Task parentTask);
+
+    /** Get top-level tasks (no parent) by project. */
+    List<Task> findByProjectAndParentTaskIsNullOrderByCreatedAtDesc(Project project);
+
+    /** Get all top-level tasks (no parent). */
+    List<Task> findByParentTaskIsNull();
 }

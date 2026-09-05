@@ -65,6 +65,16 @@ public class Task {
     @JoinColumn(name = "assigned_to")
     private User assignedTo;
 
+    /** Parent task — set when this task is a subtask of a User Story. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "parent_task_id")
+    private Task parentTask;
+
+    /** Child subtasks — only populated for parent tasks (e.g., User Stories). */
+    @OneToMany(mappedBy = "parentTask", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private java.util.List<Task> subtasks = new java.util.ArrayList<>();
+
     @PrePersist
     public void prePersist() {
         this.createdAt = LocalDateTime.now();

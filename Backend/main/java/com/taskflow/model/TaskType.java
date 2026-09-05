@@ -4,5 +4,6 @@ package com.taskflow.model;
 public enum TaskType {
     STORY,
     TASK,
-    BUG
+    BUG,
+    SUBTASK
 }
