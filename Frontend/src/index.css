@@ -7,17 +7,157 @@ body {
   background-color: #f5f6fa;
 }
 
-/* ── Auth Page ── */
+/* ── Login Page (Split Screen) ── */
+.login-page {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* Left branding panel */
+.login-left {
+  flex: 0 0 45%;
+  background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 40%, #0d47a1 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  padding: 60px;
+}
+.login-left-content { position: relative; z-index: 2; max-width: 420px; }
+.login-brand { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+.login-brand-icon { font-size: 2.8rem; color: #60a5fa; filter: drop-shadow(0 0 12px rgba(96,165,250,0.4)); }
+.login-brand-title { font-size: 2.4rem; font-weight: 800; color: #fff; letter-spacing: -0.5px; margin: 0; }
+.login-brand-subtitle { font-size: 1.05rem; color: rgba(255,255,255,0.7); line-height: 1.6; margin-bottom: 40px; }
+
+.login-features { display: flex; flex-direction: column; gap: 20px; }
+.login-feature-item {
+  display: flex; align-items: flex-start; gap: 16px;
+  padding: 16px 18px; border-radius: 14px;
+  background: rgba(255,255,255,0.06);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.08);
+  animation: fadeInUp 0.5s ease both;
+  transition: background 0.3s;
+}
+.login-feature-item:hover { background: rgba(255,255,255,0.12); }
+.login-feature-icon { color: #60a5fa; flex-shrink: 0; margin-top: 2px; }
+.login-feature-title { font-weight: 600; color: #fff; font-size: 0.95rem; margin-bottom: 3px; }
+.login-feature-desc { color: rgba(255,255,255,0.55); font-size: 0.82rem; line-height: 1.4; }
+
+/* Floating shapes */
+.floating-shape {
+  position: absolute; border-radius: 50%;
+  opacity: 0.06; background: #60a5fa;
+  animation: floatShape 18s ease-in-out infinite alternate;
+}
+.shape-1 { width: 320px; height: 320px; top: -80px; right: -60px; animation-delay: 0s; }
+.shape-2 { width: 200px; height: 200px; bottom: 10%; left: -40px; animation-delay: -6s; }
+.shape-3 { width: 120px; height: 120px; bottom: 20%; right: 15%; animation-delay: -12s; opacity: 0.1; }
+
+@keyframes floatShape {
+  0%   { transform: translateY(0) scale(1); }
+  100% { transform: translateY(-30px) scale(1.08); }
+}
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Right form panel */
+.login-right {
+  flex: 1;
+  display: flex; align-items: center; justify-content: center;
+  background: #f8fafc;
+  padding: 40px;
+}
+.login-form-wrapper { width: 100%; max-width: 420px; }
+.login-form-title { font-size: 1.65rem; font-weight: 700; color: #0f172a; margin-bottom: 6px; }
+.login-form-subtitle { color: #64748b; font-size: 0.92rem; margin-bottom: 28px; }
+
+/* Tabs */
+.login-tabs {
+  display: flex; gap: 6px; padding: 4px;
+  background: #e2e8f0; border-radius: 12px; margin-bottom: 28px;
+}
+.login-tab {
+  flex: 1; padding: 10px; border: none;
+  background: transparent; border-radius: 9px;
+  font-weight: 600; font-size: 0.88rem; color: #64748b;
+  cursor: pointer; transition: all 0.25s;
+  display: flex; align-items: center; justify-content: center;
+}
+.login-tab.active { background: #fff; color: #0f172a; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+.login-tab:hover:not(.active) { color: #334155; }
+
+/* Input fields */
+.login-input-group { margin-bottom: 18px; }
+.login-label { display: block; font-weight: 600; font-size: 0.85rem; color: #334155; margin-bottom: 6px; }
+.login-input-wrapper {
+  display: flex; align-items: center; position: relative;
+  background: #fff; border: 1.5px solid #e2e8f0; border-radius: 10px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.login-input-wrapper:focus-within {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
+}
+.login-input-icon { position: absolute; left: 14px; color: #94a3b8; font-size: 1rem; pointer-events: none; }
+.login-input {
+  width: 100%; border: none; background: transparent;
+  padding: 12px 42px 12px 42px; font-size: 0.92rem; color: #0f172a;
+  outline: none; border-radius: 10px;
+}
+.login-input::placeholder { color: #cbd5e1; }
+
+/* Password toggle */
+.password-toggle {
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; color: #94a3b8; cursor: pointer;
+  padding: 4px; font-size: 1.1rem; transition: color 0.2s;
+}
+.password-toggle:hover { color: #3b82f6; }
+
+/* Submit buttons */
+.login-submit-btn {
+  width: 100%; padding: 12px; border: none; border-radius: 10px;
+  font-weight: 600; font-size: 0.95rem; color: #fff;
+  background: linear-gradient(135deg, #2563eb, #3b82f6);
+  cursor: pointer; margin-top: 8px; transition: all 0.3s;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 8px rgba(37,99,235,0.25);
+}
+.login-submit-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(37,99,235,0.35); }
+.login-submit-btn:active:not(:disabled) { transform: translateY(0); }
+.login-submit-btn:disabled { opacity: 0.7; cursor: not-allowed; }
+.login-submit-btn.register { background: linear-gradient(135deg, #059669, #10b981); box-shadow: 0 2px 8px rgba(5,150,105,0.25); }
+.login-submit-btn.register:hover:not(:disabled) { box-shadow: 0 4px 16px rgba(5,150,105,0.35); }
+
+/* Switch link */
+.login-switch-text { text-align: center; color: #64748b; font-size: 0.85rem; margin-top: 20px; }
+.login-switch-link { background: none; border: none; color: #3b82f6; font-weight: 600; cursor: pointer; padding: 0; font-size: 0.85rem; }
+.login-switch-link:hover { color: #2563eb; text-decoration: underline; }
+
+/* Form animation */
+.login-form-animate { animation: fadeInUp 0.3s ease both; }
+
+/* Legacy compat — keep for any old references */
 .auth-bg {
   background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
   min-height: 100vh;
 }
-
 .auth-card {
   width: 440px;
   max-width: 95vw;
   border-radius: 20px;
 }
+
+/* Responsive login */
+@media (max-width: 992px) {
+  .login-left { display: none; }
+  .login-right { padding: 24px; }
+}
+
 
 /* ── Layout ── */
 .wrapper {
